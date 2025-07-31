@@ -1,70 +1,73 @@
-use secp256k1::{Secp256k1, SecretKey};
-use sha3::{Digest, Keccak256};
-use std::str;
-use dotenv::dotenv;
 use std::env;
+use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::Arc;
+use std::thread;
+use rand::Rng;
+use sha3::{Digest, Keccak256};
+use bs58;
+use secp256k1;
 
-// Tron地址前缀
-const TRON_PREFIX: &[u8] = &[0x41];
-
-fn main() {
-    // 加载 .env 文件
-    dotenv().ok();
-
-    // 从环境变量获取目标后缀
-    let target_suffix = env::var("TARGET_SUFFIX")
-        .expect("Please set TARGET_SUFFIX in .env file");
-
-    println!("Searching for Tron address ending with '{}'...", target_suffix);
-
-    let secp = Secp256k1::new();
-    let mut attempts = 0;
-
-    loop {
-        attempts += 1;
-
-        // 生成随机私钥
-        let private_key = SecretKey::new(&mut rand::thread_rng());
-
-        // 获取对应的公钥
-        let public_key = private_key.public_key(&secp);
-
-        // 计算Tron地址
-        let tron_address = public_key_to_tron_address(&public_key);
-
-        // 检查地址是否以目标后缀结尾
-        if tron_address.ends_with(&target_suffix) {
-            println!("Found after {} attempts!", attempts);
-            println!("Private Key (hex): {}", hex::encode(&private_key[..]));
-            println!("Tron Address: {}", tron_address);
-            break;
-        }
-
-        // 每10000次尝试打印一次进度
-        if attempts % 10000 == 0 {
-            println!("Attempts: {}", attempts);
-        }
-    }
+/// 从 `.env` 读取目标后缀
+fn load_target_suffix() -> String {
+    dotenv::dotenv().ok(); // 加载 .env 文件
+    env::var("TARGET_SUFFIX").unwrap_or_else(|_| "UUUU".to_string())
 }
 
-// 将公钥转换为Tron地址
-fn public_key_to_tron_address(public_key: &secp256k1::PublicKey) -> String {
-    // 获取压缩公钥的字节表示
-    let public_key_bytes = public_key.serialize();
+/// 生成随机的 TRON 地址
+fn generate_random_tron_address() -> String {
+    let mut rng = rand::thread_rng();
+    let mut private_key = [0u8; 32];
+    rng.fill(&mut private_key);
 
-    // 计算Keccak256哈希（注意跳过压缩前缀0x02或0x03）
+    let secp = secp256k1::Secp256k1::new();
+    let secret_key = secp256k1::SecretKey::from_slice(&private_key).unwrap();
+    let public_key = secp256k1::PublicKey::from_secret_key(&secp, &secret_key);
+    let public_key_bytes = public_key.serialize_uncompressed();
+
     let mut hasher = Keccak256::new();
     hasher.update(&public_key_bytes[1..]);
     let hash = hasher.finalize();
-
-    // 取最后20字节作为地址
     let address_bytes = &hash[12..32];
 
-    // 添加Tron前缀0x41
-    let mut tron_address_bytes = Vec::with_capacity(21);
-    tron_address_bytes.extend_from_slice(TRON_PREFIX);
-    tron_address_bytes.extend_from_slice(address_bytes);
+    let mut prefixed_address = vec![0x41];
+    prefixed_address.extend_from_slice(address_bytes);
 
-    // Base58编码
-    bs58::encode(&tron_address_bytes).into_string()
+    let checksum = &Keccak256::digest(&Keccak256::digest(&prefixed_address))[0..4];
+    prefixed_address.extend_from_slice(checksum);
+    bs58::encode(prefixed_address).into_string()
+}
+
+/// 检查地址是否以指定后缀结尾
+fn is_matching_address(address: &str, suffix: &str) -> bool {
+    address.len() == 34 && address.ends_with(suffix)
+}
+
+fn main() {
+    let target_suffix = load_target_suffix();
+    println!("Searching for TRON addresses ending with: '{}'", target_suffix);
+
+    let found = Arc::new(AtomicBool::new(false));
+    let num_threads = num_cpus::get();
+    println!("Searching with {} threads...", num_threads);
+    let handles: Vec<_> = (0..num_threads)
+        .map(|_| {
+            let found = Arc::clone(&found);
+            let suffix = target_suffix.clone();
+            thread::spawn(move || {
+                while !found.load(Ordering::Relaxed) {
+                    let address = generate_random_tron_address();
+                    println!("address: {}", address);
+                    if is_matching_address(&address, &suffix) {
+                        println!("Found matching address: {}", address);
+                        found.store(true, Ordering::Relaxed);
+                        break;
+                    }
+                }
+            })
+        })
+        .collect();
+
+    for handle in handles {
+        handle.join().unwrap();
+    }
 }
