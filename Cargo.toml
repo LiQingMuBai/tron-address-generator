@@ -1,0 +1,12 @@
+[package]
+name = "tron_address_generator"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+secp256k1 = { version = "0.24", features = ["rand"] }
+sha3 = "0.10"
+rand = "0.8"
+hex = "0.4"
+bs58 = "0.4"
+dotenv = "0.15"
