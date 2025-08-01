@@ -6,19 +6,25 @@ use rand::Rng;
 use sha3::{Digest, Keccak256};
 use bs58;
 use secp256k1;
+use hex;
 
 /// 从 `.env` 读取目标后缀
 fn load_target_suffix() -> String {
-    dotenv::dotenv().ok(); // 加载 .env 文件
+    dotenv::dotenv().ok();
     env::var("TARGET_SUFFIX").unwrap_or_else(|_| "UUUU".to_string())
 }
 
-/// 生成随机的 TRON 地址
-fn generate_random_tron_address() -> String {
+/// 生成随机的 TRON 地址，并返回（私钥, 地址）
+fn generate_tron_address_with_private_key() -> (String, String) {
     let mut rng = rand::thread_rng();
     let mut private_key = [0u8; 32];
     rng.fill(&mut private_key);
 
+    // 1. 打印私钥（16进制格式）
+    let private_key_hex = hex::encode(private_key);
+    println!("Generated Private Key: 0x{}", private_key_hex);
+
+    // 2. 计算公钥和地址
     let secp = secp256k1::Secp256k1::new();
     let secret_key = secp256k1::SecretKey::from_slice(&private_key).unwrap();
     let public_key = secp256k1::PublicKey::from_secret_key(&secp, &secret_key);
@@ -34,10 +40,12 @@ fn generate_random_tron_address() -> String {
 
     let checksum = &Keccak256::digest(&Keccak256::digest(&prefixed_address))[0..4];
     prefixed_address.extend_from_slice(checksum);
-    bs58::encode(prefixed_address).into_string()
+    let address = bs58::encode(prefixed_address).into_string();
+
+    (private_key_hex, address)
 }
 
-/// 检查地址是否以指定后缀结尾
+/// 检查地址是否匹配目标后缀
 fn is_matching_address(address: &str, suffix: &str) -> bool {
     address.len() == 34 && address.ends_with(suffix)
 }
@@ -48,17 +56,18 @@ fn main() {
 
     let found = Arc::new(AtomicBool::new(false));
     let num_threads = num_cpus::get();
-    println!("Searching with {} threads...", num_threads);
+
     let handles: Vec<_> = (0..num_threads)
         .map(|_| {
             let found = Arc::clone(&found);
             let suffix = target_suffix.clone();
             thread::spawn(move || {
                 while !found.load(Ordering::Relaxed) {
-                    let address = generate_random_tron_address();
-                    println!("address: {}", address);
+                    let (private_key, address) = generate_tron_address_with_private_key();
                     if is_matching_address(&address, &suffix) {
-                        println!("Found matching address: {}", address);
+                        println!("\n✅ Found matching address!");
+                        println!("Private Key: 0x{}", private_key);
+                        println!("TRON Address: {}", address);
                         found.store(true, Ordering::Relaxed);
                         break;
                     }
