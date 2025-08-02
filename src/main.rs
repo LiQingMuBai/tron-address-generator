@@ -1,13 +1,13 @@
+use bs58;
+use hex;
+use rand::Rng;
+use secp256k1;
+use sha3::{Digest, Keccak256};
 use std::env;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use std::thread;
-use rand::Rng;
-use sha3::{Digest, Keccak256};
-use bs58;
-use secp256k1;
-use hex;
-
+use std::time::Duration;
 /// 从 `.env` 读取目标后缀
 fn load_target_suffix() -> String {
     dotenv::dotenv().ok();
@@ -22,7 +22,7 @@ fn generate_tron_address_with_private_key() -> (String, String) {
 
     // 1. 打印私钥（16进制格式）
     let private_key_hex = hex::encode(private_key);
-    println!("Generated Private Key: 0x{}", private_key_hex);
+    // println!("Generated Private Key: 0x{}", private_key_hex);
 
     // 2. 计算公钥和地址
     let secp = secp256k1::Secp256k1::new();
@@ -47,12 +47,31 @@ fn generate_tron_address_with_private_key() -> (String, String) {
 
 /// 检查地址是否匹配目标后缀
 fn is_matching_address(address: &str, suffix: &str) -> bool {
-    address.len() == 34 && address.ends_with(suffix)
+    let items = parse_comma_separated(suffix);
+
+    for item in items {
+        // println!("- {}", item);
+        // thread::sleep(Duration::from_millis(1500));
+        if address.len() == 34 && address.ends_with(&item) {
+            return true;
+        }
+    }
+    return false;
+}
+fn parse_comma_separated(input: &str) -> Vec<String> {
+    input
+        .split(',')
+        .map(|s| s.trim().to_string())
+        .filter(|s| !s.is_empty())
+        .collect()
 }
 
 fn main() {
     let target_suffix = load_target_suffix();
-    println!("Searching for TRON addresses ending with: '{}'", target_suffix);
+    println!(
+        "Searching for TRON addresses ending with: '{}'",
+        target_suffix
+    );
 
     let found = Arc::new(AtomicBool::new(false));
     let num_threads = num_cpus::get();
