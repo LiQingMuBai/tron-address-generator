@@ -76,7 +76,7 @@ fn find_address_with_suffix(suffix: &str, max_attempts: u64) -> Option<(String, 
         let address = bs58::encode(address_with_checksum).into_string();
 
         // 检查地址是否以指定后缀结尾(不区分大小写)
-        if address.to_lowercase().ends_with(&suffix.to_lowercase()) {
+        if address.ends_with(&suffix) {
             return Some((address, private_key_hex));
         }
     }
