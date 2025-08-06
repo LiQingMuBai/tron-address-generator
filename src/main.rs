@@ -34,8 +34,7 @@ fn main() {
             println!("地址: {}", address);
             println!("私钥: {}", private_key);
             println!("耗时: {:.2}秒", start_time.elapsed().as_secs_f32());
-        } else {
-            println!("在 {} 次尝试后未找到以 '{}' 结尾的地址", max_attempts, suffix);
+        } else { println!("在 {} 次尝试后未找到以 '{}' 结尾的地址", max_attempts, suffix);
         }
     }
 }
@@ -75,8 +74,12 @@ fn find_address_with_suffix(suffix: &str, max_attempts: u64) -> Option<(String, 
         // Base58编码
         let address = bs58::encode(address_with_checksum).into_string();
 
+        println!("地址: {}", address);
+        // 检查地址是否以指定前缀结尾(区分大小写)
+        let start = "T";
+        let prefix = format!("{}{}", start, suffix);
         // 检查地址是否以指定后缀结尾(区分大小写)
-        if address.ends_with(&suffix) {
+        if address.ends_with(&suffix) ||address.starts_with(&prefix) {
             return Some((address, private_key_hex));
         }
     }
