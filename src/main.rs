@@ -73,8 +73,6 @@ fn find_address_with_suffix(suffix: &str, max_attempts: u64) -> Option<(String, 
 
         // Base58编码
         let address = bs58::encode(address_with_checksum).into_string();
-
-        println!("地址: {}", address);
         // 检查地址是否以指定前缀结尾(区分大小写)
         let start = "T";
         let prefix = format!("{}{}", start, suffix);
