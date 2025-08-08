@@ -2,87 +2,124 @@ use secp256k1::{Secp256k1, SecretKey};
 use rand::rngs::OsRng;
 use sha3::{Digest, Keccak256};
 use std::time::Instant;
-use dotenv::dotenv;
-use std::env;
 use bs58;
+use clap::Parser;
 
-fn main() {
-    // 加载 .env 文件
-    dotenv().ok();
+#[derive(Parser, Debug)]
+#[command(author, version, about, long_about = None)]
+struct Args {
+    /// Pattern to search for (supports ^ for start, $ for end)
+    #[arg(short, long)]
+    pattern: String,
 
-    // 从环境变量读取后缀，用逗号分隔
-    let suffixes_str = env::var("TRON_ADDRESS_SUFFIXES")
-        .expect("请在 .env 文件中设置 TRON_ADDRESS_SUFFIXES");
+    /// Case-sensitive matching
+    #[arg(short, long, default_value_t = false)]
+    case_sensitive: bool,
 
-    let suffixes: Vec<&str> = suffixes_str.split(',').map(|s| s.trim()).collect();
+    /// Maximum generation attempts
+    #[arg(short, long, default_value_t = 10_000_000)]
+    max_attempts: u64,
 
-    // 从环境变量读取最大尝试次数
-    let max_attempts = env::var("MAX_ATTEMPTS")
-        .map(|s| s.parse().unwrap_or(100_000_000))
-        .unwrap_or(100_000_000);
-
-    println!("开始生成指定后缀的波场地址...");
-    println!("目标后缀: {:?}", suffixes);
-    println!("最大尝试次数: {}", max_attempts);
-
-    for suffix in suffixes {
-        println!("\n正在生成以 '{}' 结尾的地址...", suffix);
-        let start_time = Instant::now();
-
-        if let Some((address, private_key)) = find_address_with_suffix(suffix, max_attempts) {
-            println!("成功生成地址!");
-            println!("地址: {}", address);
-            println!("私钥: {}", private_key);
-            println!("耗时: {:.2}秒", start_time.elapsed().as_secs_f32());
-        } else { println!("在 {} 次尝试后未找到以 '{}' 结尾的地址", max_attempts, suffix);
-        }
-    }
+    /// Show progress updates
+    #[arg(short, long, default_value_t = false)]
+    verbose: bool,
 }
 
-fn find_address_with_suffix(suffix: &str, max_attempts: u64) -> Option<(String, String)> {
-    let secp = Secp256k1::new();
-    let mut rng = OsRng;
+/// Macro for advanced pattern matching
+macro_rules! match_pattern {
+    ($address:expr, $pattern:expr, $case_sensitive:expr) => {{
+        let addr = if $case_sensitive {
+            $address.clone()
+        } else {
+            $address.to_lowercase()
+        };
+        let pat = if $case_sensitive {
+            $pattern.to_string()
+        } else {
+            $pattern.to_lowercase()
+        };
 
-    for _ in 0..max_attempts {
-        // 生成随机私钥
-        let private_key = SecretKey::new(&mut rng);
-        let private_key_hex = hex::encode(private_key.as_ref());
+        if pat.starts_with('^') && pat.ends_with('$') {
+            // Exact match (^pattern$)
+            addr == pat[1..pat.len()-1].to_string()
+        } else if pat.starts_with('^') {
+            // Starts with (^pattern)
+            addr.starts_with(&pat[1..])
+        } else if pat.ends_with('$') {
+            // Ends with (pattern$)
+            addr.ends_with(&pat[..pat.len()-1])
+        } else {
+            // Contains anywhere
+            addr.contains(&pat)
+        }
+    }};
+}
 
-        // 从私钥获取公钥
-        let public_key = private_key.public_key(&secp);
-        let public_key_bytes = &public_key.serialize_uncompressed()[1..]; // 去掉前缀
+fn main() {
+    let args = Args::parse();
 
-        // 计算Keccak256哈希
-        let mut hasher = Keccak256::new();
-        hasher.update(public_key_bytes);
-        let hash = hasher.finalize();
+    println!("🚀 Starting Tron address generator (single-threaded)");
+    println!("🔍 Pattern: '{}'", args.pattern);
+    println!("🔠 Case-sensitive: {}", args.case_sensitive);
+    println!("🔄 Max attempts: {}", args.max_attempts);
 
-        // 取最后20字节作为地址
-        let address_bytes = &hash[hash.len()-20..];
+    let start_time = Instant::now();
+    let mut attempts = 0;
 
-        // 添加波场地址前缀 0x41
-        let mut tron_address = vec![0x41];
-        tron_address.extend_from_slice(address_bytes);
+    while attempts < args.max_attempts {
+        attempts += 1;
 
-        // 计算双SHA256哈希的前4字节作为校验和
-        let checksum = double_sha256(&tron_address)[..4].to_vec();
+        if args.verbose && attempts % 1_000_000 == 0 {
+            println!("Attempts: {}M", attempts / 1_000_000);
+        }
 
-        // 组合地址和校验和
-        let mut address_with_checksum = tron_address.clone();
-        address_with_checksum.extend(checksum);
-
-        // Base58编码
-        let address = bs58::encode(address_with_checksum).into_string();
-        // 检查地址是否以指定前缀结尾(区分大小写)
-        let start = "T";
-        let prefix = format!("{}{}", start, suffix);
-        // 检查地址是否以指定后缀结尾(区分大小写)
-        if address.ends_with(&suffix) ||address.starts_with(&prefix) {
-            return Some((address, private_key_hex));
+        if let Some((address, private_key)) = generate_tron_address() {
+            if match_pattern!(address, &args.pattern, args.case_sensitive) {
+                println!("\n🎉 Found matching address after {} attempts!", attempts);
+                println!("📍 Address: {}", address);
+                println!("🔑 Private key: {}", private_key);
+                println!("⏱️ Time elapsed: {:.2}s", start_time.elapsed().as_secs_f32());
+                return;
+            }
         }
     }
 
-    None
+    println!("\n🔴 No match found after {} attempts", attempts);
+    println!("⏱️ Total time: {:.2}s", start_time.elapsed().as_secs_f32());
+}
+
+fn generate_tron_address() -> Option<(String, String)> {
+    let secp = Secp256k1::new();
+    let private_key = SecretKey::new(&mut OsRng);
+
+    // Generate public key
+    let public_key = private_key.public_key(&secp);
+    let public_key_bytes = &public_key.serialize_uncompressed()[1..65];
+
+    // Hash public key
+    let mut hasher = Keccak256::new();
+    hasher.update(public_key_bytes);
+    let hash = hasher.finalize();
+
+    // Get address bytes (last 20 bytes of hash)
+    let address_bytes = &hash[12..32];
+
+    // Create Tron address (0x41 prefix)
+    let mut tron_address = vec![0x41];
+    tron_address.extend_from_slice(address_bytes);
+
+    // Calculate checksum
+    let checksum = double_sha256(&tron_address)[..4].to_vec();
+
+    // Final address with checksum
+    let mut final_address = tron_address.clone();
+    final_address.extend(checksum);
+
+    // Base58 encoding
+    let address = bs58::encode(final_address).into_string();
+    let private_key_hex = hex::encode(private_key.as_ref());
+
+    Some((address, private_key_hex))
 }
 
 fn double_sha256(data: &[u8]) -> Vec<u8> {

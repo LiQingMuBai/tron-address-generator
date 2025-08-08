@@ -9,5 +9,6 @@ rand = "0.8"
 sha3 = "0.10"
 sha2 = "0.10"
 bs58 = "0.4"
-dotenv = "0.15"
-hex = "0.4"
+rayon = "1.5"
+clap = { version = "4.0", features = ["derive"] }
+hex = "0.4.3"
