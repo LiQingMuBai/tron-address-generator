@@ -23,4 +23,4 @@ A high-performance Rust tool for generating custom Tron addresses with specific 
 ```bash
 git clone https://github.com/liqingmubai/tron_address_generator.git
 cd tron_address_generator
-cargo build --release
+cargo run  --pattern Gucci$  --case-sensitive --max-attempts 5000000
