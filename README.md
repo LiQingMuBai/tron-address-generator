@@ -23,4 +23,10 @@ A high-performance Rust tool for generating custom Tron addresses with specific 
 ```bash
 git clone https://github.com/liqingmubai/tron_address_generator.git
 cd tron_address_generator
-cargo run  --pattern Gucci$  --case-sensitive --max-attempts 5000000
+cargo run -- --suffixes Dior,Gucci --max-attempts 90000000000
+
+```bash
+🚀 Starting Tron address generator (single-threaded)
+🔍 Pattern: {"Gucci", "Dior"}
+🔠 Case-sensitive: false
+🔄 Max attempts: 90000000000
