@@ -4,13 +4,14 @@ use sha3::{Digest, Keccak256};
 use std::time::Instant;
 use bs58;
 use clap::Parser;
-
+use std::collections::HashSet;
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]
 struct Args {
-    /// Pattern to search for (supports ^ for start, $ for end)
-    #[arg(short, long)]
-    pattern: String,
+
+
+    #[arg(short, long, value_delimiter = ',')]
+    suffixes: Vec<String>,
 
     /// Case-sensitive matching
     #[arg(short, long, default_value_t = false)]
@@ -26,40 +27,22 @@ struct Args {
 }
 
 /// Macro for advanced pattern matching
-macro_rules! match_pattern {
-    ($address:expr, $pattern:expr, $case_sensitive:expr) => {{
-        let addr = if $case_sensitive {
-            $address.clone()
-        } else {
-            $address.to_lowercase()
-        };
-        let pat = if $case_sensitive {
-            $pattern.to_string()
-        } else {
-            $pattern.to_lowercase()
-        };
-
-        if pat.starts_with('^') && pat.ends_with('$') {
-            // Exact match (^pattern$)
-            addr == pat[1..pat.len()-1].to_string()
-        } else if pat.starts_with('^') {
-            // Starts with (^pattern)
-            addr.starts_with(&pat[1..])
-        } else if pat.ends_with('$') {
-            // Ends with (pattern$)
-            addr.ends_with(&pat[..pat.len()-1])
-        } else {
-            // Contains anywhere
-            addr.contains(&pat)
-        }
+macro_rules! match_any_suffix {
+    ($address:expr, $suffixes:expr, $case_sensitive:expr) => {{
+        let addr = $address.as_str();
+        $suffixes.iter().any(|s| {
+            let suffix = s.as_str();
+            addr.ends_with(suffix)
+        })
     }};
 }
 
+
 fn main() {
     let args = Args::parse();
-
+    let suffixes: HashSet<String> = args.suffixes.into_iter().collect();
     println!("🚀 Starting Tron address generator (single-threaded)");
-    println!("🔍 Pattern: '{}'", args.pattern);
+    println!("🔍 Pattern: {:?}", suffixes);
     println!("🔠 Case-sensitive: {}", args.case_sensitive);
     println!("🔄 Max attempts: {}", args.max_attempts);
 
@@ -74,7 +57,7 @@ fn main() {
         }
 
         if let Some((address, private_key)) = generate_tron_address() {
-            if match_pattern!(address, &args.pattern, args.case_sensitive) {
+            if match_any_suffix!(address,suffixes, args.case_sensitive) {
                 println!("\n🎉 Found matching address after {} attempts!", attempts);
                 println!("📍 Address: {}", address);
                 println!("🔑 Private key: {}", private_key);
