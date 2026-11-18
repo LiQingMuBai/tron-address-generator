@@ -86,7 +86,8 @@ jobs:
         if: runner.os == 'Windows'
         shell: pwsh
         run: |
-          dotnet tool install --global wix
+          # Pin to WiX v5: v6+ requires accepting the OSMF EULA before it will run.
+          dotnet tool install --global wix --version 5.0.2
           $dist = (Resolve-Path dist).Path
           wix build wix/installer.wxs -arch x64 -d "DistDir=$dist" -o dist/tron-vanity-windows-x64.msi
 
