@@ -49,6 +49,7 @@ jobs:
           mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
           cp target/release/tron-vanity-desktop "$APP/Contents/MacOS/"
           cp config.xml "$APP/Contents/MacOS/"
+          cp assets/icon.icns "$APP/Contents/Resources/"
           cat > "$APP/Contents/Info.plist" <<'PLIST'
           <?xml version="1.0" encoding="UTF-8"?>
           <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
@@ -60,6 +61,7 @@ jobs:
             <key>CFBundleVersion</key><string>0.1.0</string>
             <key>CFBundleShortVersionString</key><string>0.1.0</string>
             <key>CFBundleExecutable</key><string>tron-vanity-desktop</string>
+            <key>CFBundleIconFile</key><string>icon.icns</string>
             <key>CFBundlePackageType</key><string>APPL</string>
             <key>LSMinimumSystemVersion</key><string>10.15</string>
             <key>NSHighResolutionCapable</key><true/>
@@ -76,7 +78,17 @@ jobs:
           New-Item -ItemType Directory -Force -Path dist | Out-Null
           Copy-Item target/release/tron-vanity-desktop.exe dist/
           Copy-Item config.xml dist/
-          Compress-Archive -Path dist/* -DestinationPath dist/tron-vanity-windows-x64.zip -Force
+          Copy-Item assets/icon.ico dist/
+          Compress-Archive -Path dist/tron-vanity-desktop.exe, dist/config.xml, dist/icon.ico `
+            -DestinationPath dist/tron-vanity-windows-x64.zip -Force
+
+      - name: Build MSI installer (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          dotnet tool install --global wix
+          $dist = (Resolve-Path dist).Path
+          wix build wix/installer.wxs -arch x64 -d "DistDir=$dist" -o dist/tron-vanity-windows-x64.msi
 
       - name: Upload packages
         uses: actions/upload-artifact@v4
@@ -85,4 +97,5 @@ jobs:
           path: |
             dist/*.zip
             dist/*.dmg
+            dist/*.msi
           if-no-files-found: error
