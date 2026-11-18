@@ -1,0 +1,14 @@
+# Rust 构建产物
+/target/
+
+# 打包输出
+/dist/
+
+# 生成的地址导出文件（含私钥，切勿提交）
+tron_vanity_*.csv
+tron_vanity_*.txt
+tron_vanity_*.json
+sample_output.csv
+
+# macOS
+.DS_Store

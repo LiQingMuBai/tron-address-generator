@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 波场(TRON)地址生成器全局配置 -->
+<AddressGeneratorConfig>
+
+    <!-- 基础链配置 -->
+    <ChainConfig>
+        <ChainType>TRON</ChainType>
+        <AddressPrefix>T</AddressPrefix> <!-- 波场地址固定以T开头 -->
+        <AddressLength>34</AddressLength> <!-- 波场地址标准长度 -->
+        <PrivateKeyFormat>Hex</PrivateKeyFormat>
+    </ChainConfig>
+
+    <!-- 任务执行配置 -->
+    <TaskConfig>
+        <TargetCount>1</TargetCount> <!-- 需要生成的符合条件的地址总数 -->
+        <ThreadCount>0</ThreadCount> <!-- 并发线程数，0表示自动获取CPU核心数 -->
+        <ExportFormat>CSV</ExportFormat> <!-- 导出格式: CSV, TXT, JSON -->
+    </TaskConfig>
+
+    <!-- 复合尾号条件定义 (支持多个条件组合) -->
+    <CompositeConditions>
+        <!-- 逻辑关系: AND (满足所有) 或 OR (满足任一) -->
+        <LogicOperator>AND</LogicOperator>
+
+        <!-- 条件 1: 连续重复字符 (例如: 尾号包含 888) -->
+        <Condition>
+            <Type>Repeating</Type>
+            <Param>
+                <Char>8</Char>
+                <MinCount>3</MinCount>
+                <Position>Last</Position> <!-- 位置: Last(结尾), Anywhere(任意位置) -->
+            </Param>
+        </Condition>
+
+        <!-- 条件 2: 固定字符匹配 (例如: 倒数第5位是 A) -->
+        <Condition>
+            <Type>FixedChar</Type>
+            <Param>
+                <Char>A</Char>
+                <IndexFromEnd>5</IndexFromEnd> <!-- 从末尾数第几位 -->
+            </Param>
+        </Condition>
+
+        <!-- 条件 3: 正则表达式匹配 (高级自定义) -->
+        <Condition>
+            <Type>Regex</Type>
+            <Param>
+                <Pattern>[a-zA-Z0-9]{4}$</Pattern> <!-- 示例: 结尾4位必须是字母或数字 -->
+            </Param>
+        </Condition>
+    </CompositeConditions>
+
+</AddressGeneratorConfig>

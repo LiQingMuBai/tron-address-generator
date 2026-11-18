@@ -1,0 +1,41 @@
+[package]
+name = "tron-vanity-address"
+version = "0.1.0"
+edition = "2021"
+description = "TRON vanity address generator driven by an XML configuration file"
+
+[[bin]]
+name = "tron-vanity"
+path = "src/main.rs"
+
+[[bin]]
+name = "tron-vanity-desktop"
+path = "src/bin/tron-vanity-desktop.rs"
+
+[dependencies]
+anyhow = "1"
+thiserror = "1"
+clap = { version = "4", features = ["derive"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+roxmltree = "0.20"
+secp256k1 = { version = "0.29", features = ["std"] }
+sha3 = "0.10"
+bs58 = { version = "0.5", features = ["check"] }
+hex = "0.4"
+rand = "0.8"
+rayon = "1"
+indicatif = "0.17"
+comfy-table = "7"
+regex = "1"
+chrono = { version = "0.4", default-features = false, features = ["clock"] }
+axum = "0.7"
+tokio = { version = "1", features = ["rt-multi-thread", "net", "time", "sync"] }
+ureq = "3.5.2"
+wry = "0.57.3"
+tao = "0.37.3"
+
+[profile.release]
+lto = "thin"
+codegen-units = 1
+panic = "abort"

@@ -1,0 +1,88 @@
+name: Build desktop app
+
+# Produces ready-to-run desktop packages for macOS and Windows.
+# Trigger manually from the Actions tab, or by pushing a tag such as v0.1.0.
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: ${{ matrix.name }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: macOS (Apple Silicon)
+            os: macos-14
+            artifact: tron-vanity-macos-arm64
+          - name: macOS (Intel)
+            os: macos-13
+            artifact: tron-vanity-macos-x64
+          - name: Windows (x64)
+            os: windows-latest
+            artifact: tron-vanity-windows-x64
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache cargo registry and build
+        uses: Swatinem/rust-cache@v2
+
+      - name: Build desktop binary
+        run: cargo build --release --bin tron-vanity-desktop
+
+      - name: Package (macOS)
+        if: runner.os == 'macOS'
+        shell: bash
+        run: |
+          set -euo pipefail
+          APP="dist/TRON-Vanity.app"
+          mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
+          cp target/release/tron-vanity-desktop "$APP/Contents/MacOS/"
+          cp config.xml "$APP/Contents/MacOS/"
+          cat > "$APP/Contents/Info.plist" <<'PLIST'
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+            <key>CFBundleName</key><string>TRON Vanity</string>
+            <key>CFBundleDisplayName</key><string>TRON 靓号生成器</string>
+            <key>CFBundleIdentifier</key><string>com.tron.vanity</string>
+            <key>CFBundleVersion</key><string>0.1.0</string>
+            <key>CFBundleShortVersionString</key><string>0.1.0</string>
+            <key>CFBundleExecutable</key><string>tron-vanity-desktop</string>
+            <key>CFBundlePackageType</key><string>APPL</string>
+            <key>LSMinimumSystemVersion</key><string>10.15</string>
+            <key>NSHighResolutionCapable</key><true/>
+          </dict>
+          </plist>
+          PLIST
+          hdiutil create -volname "TRON Vanity" -srcfolder "$APP" -ov -format UDZO "dist/tron-vanity-macos.dmg"
+          (cd dist && zip -qry "tron-vanity-macos-app.zip" "TRON-Vanity.app")
+
+      - name: Package (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path dist | Out-Null
+          Copy-Item target/release/tron-vanity-desktop.exe dist/
+          Copy-Item config.xml dist/
+          Compress-Archive -Path dist/* -DestinationPath dist/tron-vanity-windows-x64.zip -Force
+
+      - name: Upload packages
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact }}
+          path: |
+            dist/*.zip
+            dist/*.dmg
+          if-no-files-found: error
