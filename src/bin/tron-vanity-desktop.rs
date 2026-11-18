@@ -35,7 +35,7 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
 
     let event_loop = EventLoop::new();
     let window = WindowBuilder::new()
-        .with_title("TRON 靓号生成器")
+        .with_title("TRON Vanity Generator")
         .with_inner_size(LogicalSize::new(1180.0, 820.0))
         .with_min_inner_size(LogicalSize::new(900.0, 640.0))
         .build(&event_loop)?;

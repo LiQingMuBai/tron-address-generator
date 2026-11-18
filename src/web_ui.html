@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="color-scheme" content="dark">
-<title>TRON_靓号生成器 // console</title>
+<title>TRON_VANITY // console</title>
 <style>
   :root {
     --bg: #03060a;
@@ -365,33 +365,33 @@
         </svg>
       </div>
       <div>
-        <h1>TRON_靓号生成器<span class="cursor"></span></h1>
-        <p class="sub">secp256k1 · keccak256 · base58check · 本地离线</p>
+        <h1>TRON_VANITY<span class="cursor"></span></h1>
+        <p class="sub">secp256k1 · keccak256 · base58check · fully offline</p>
       </div>
     </div>
-    <div class="pill" id="status" data-state="idle"><span class="dot"></span><span id="statusText">待机</span></div>
+    <div class="pill" id="status" data-state="idle"><span class="dot"></span><span id="statusText">Idle</span></div>
   </header>
 
   <div class="grid">
     <div class="side">
       <section class="card">
-        <h2>尾号匹配</h2>
+        <h2>Suffix match</h2>
         <label class="field">
-          <span>地址尾号（例如 888、A888、66888）</span>
+          <span>Address suffix (e.g. 888, A888, 66888)</span>
           <input id="suffix" type="text" value="888" maxlength="32" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="888">
         </label>
-        <p class="hint">生成以该字符串结尾的地址 · 区分大小写 · 仅限 Base58 字符（不含 0 O I l）</p>
+        <p class="hint">Generates addresses ending with this string · case-sensitive · Base58 characters only (no 0 O I l)</p>
       </section>
 
       <section class="card">
-        <h2>任务参数</h2>
+        <h2>Job parameters</h2>
         <div class="row">
-          <label class="field"><span>目标数量</span><input id="target" type="number" min="1" value="1"></label>
-          <label class="field"><span>线程数 (0 = 自动)</span><input id="threads" type="number" min="0" value="0"></label>
+          <label class="field"><span>Target count</span><input id="target" type="number" min="1" value="1"></label>
+          <label class="field"><span>Threads (0 = auto)</span><input id="threads" type="number" min="0" value="0"></label>
         </div>
         <div class="actions">
-          <button class="btn primary" id="startBtn">开始生成</button>
-          <button class="btn danger" id="stopBtn" disabled>停止</button>
+          <button class="btn primary" id="startBtn">Start</button>
+          <button class="btn danger" id="stopBtn" disabled>Stop</button>
         </div>
         <div class="toast" id="toast"></div>
       </section>
@@ -399,30 +399,30 @@
 
     <div>
       <section class="card">
-        <h2>运行状态</h2>
+        <h2>Run status</h2>
         <div class="bar" id="bar"><i id="barFill"></i></div>
         <div class="stats">
-          <div class="stat"><b id="sFound">0 / 0</b><span>已找到 / 目标</span></div>
-          <div class="stat"><b id="sAttempts">0</b><span>尝试次数</span></div>
+          <div class="stat"><b id="sFound">0 / 0</b><span>Found / target</span></div>
+          <div class="stat"><b id="sAttempts">0</b><span>Attempts</span></div>
           <div class="stat"><b id="sRate">0</b><span>key/s</span></div>
-          <div class="stat"><b id="sElapsed">0.0s</b><span>耗时</span></div>
+          <div class="stat"><b id="sElapsed">0.0s</b><span>Elapsed</span></div>
         </div>
       </section>
 
       <section class="card">
-        <h2>生成结果</h2>
+        <h2>Results</h2>
         <div class="actions" style="margin:0 0 12px">
-          <button class="btn ghost" id="dlTxt">导出 TXT</button>
+          <button class="btn ghost" id="dlTxt">Export TXT</button>
         </div>
         <div class="table-wrap">
           <table>
             <thead>
-              <tr><th style="width:52px">#</th><th>地址</th><th>私钥 (Hex)</th><th style="width:64px"></th></tr>
+              <tr><th style="width:52px">#</th><th>Address</th><th>Private key (Hex)</th><th style="width:64px"></th></tr>
             </thead>
             <tbody id="results"></tbody>
           </table>
         </div>
-        <div class="empty" id="empty">尚无结果，填写尾号后点击「开始生成」</div>
+        <div class="empty" id="empty">No results yet — enter a suffix and click "Start"</div>
       </section>
     </div>
   </div>
@@ -457,7 +457,7 @@
     $("suffix").value = data.suffix == null ? "888" : String(data.suffix);
     $("target").value = data.target == null ? 1 : data.target;
     $("threads").value = data.threads == null ? CORES : data.threads;
-    if (source === "config") toast("已载入 config.xml 的尾号预设", "ok");
+    if (source === "config") toast("Loaded suffix preset from config.xml", "ok");
   }
 
   function setStatus(kind, text) {
@@ -472,7 +472,7 @@
   function copy(text, button) {
     const done = () => {
       const original = button.textContent;
-      button.textContent = "已复制";
+      button.textContent = "Copied";
       setTimeout(() => { button.textContent = original; }, 1200);
     };
     if (navigator.clipboard && window.isSecureContext) {
@@ -516,7 +516,7 @@
       const button = document.createElement("button");
       button.className = "copy";
       button.type = "button";
-      button.textContent = "复制";
+      button.textContent = "Copy";
       button.addEventListener("click", () => copy(record.private_key, button));
       action.appendChild(button);
       tr.appendChild(action);
@@ -544,13 +544,13 @@
     $("stopBtn").disabled = !data.running;
 
     if (data.running) {
-      setStatus("running", "生成中");
+      setStatus("running", "Running");
     } else if (!data.finished) {
-      setStatus("idle", "待机");
+      setStatus("idle", "Idle");
     } else if (data.completed) {
-      setStatus("done", "已完成");
+      setStatus("done", "Done");
     } else {
-      setStatus("stopped", "已停止");
+      setStatus("stopped", "Stopped");
     }
 
     if (found.length !== state.lastFound) {
@@ -570,7 +570,7 @@
   async function start() {
     const suffix = $("suffix").value.trim();
     if (!suffix) {
-      toast("请填写地址尾号", "error");
+      toast("Enter an address suffix", "error");
       return;
     }
 
@@ -589,16 +589,16 @@
       });
       const data = await response.json().catch(() => ({}));
       if (!response.ok) {
-        toast(data.error || "启动失败", "error");
+        toast(data.error || "Failed to start", "error");
         $("startBtn").disabled = false;
         return;
       }
       state.lastFound = -1;
       renderResults([]);
-      toast("任务已启动", "ok");
+      toast("Search started", "ok");
       refresh();
     } catch (e) {
-      toast("无法连接后端服务", "error");
+      toast("Cannot reach the backend service", "error");
       $("startBtn").disabled = false;
     }
   }
@@ -611,7 +611,7 @@
 
   function download() {
     if (state.lastFound <= 0) {
-      toast("暂无结果可导出", "error");
+      toast("No results to export", "error");
       return;
     }
     window.location.href = "/api/download";

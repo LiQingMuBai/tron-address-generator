@@ -56,7 +56,7 @@ jobs:
           <plist version="1.0">
           <dict>
             <key>CFBundleName</key><string>TRON Vanity</string>
-            <key>CFBundleDisplayName</key><string>TRON 靓号生成器</string>
+            <key>CFBundleDisplayName</key><string>TRON Vanity Generator</string>
             <key>CFBundleIdentifier</key><string>com.tron.vanity</string>
             <key>CFBundleVersion</key><string>0.1.0</string>
             <key>CFBundleShortVersionString</key><string>0.1.0</string>

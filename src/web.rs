@@ -185,7 +185,7 @@ async fn start(State(state): State<AppState>, Json(request): Json<StartRequest>)
         if guard.running {
             return (
                 StatusCode::CONFLICT,
-                Json(json!({ "error": "已有任务在运行" })),
+                Json(json!({ "error": "A search is already running" })),
             )
                 .into_response();
         }
@@ -298,11 +298,15 @@ impl StartRequest {
     /// Convert the browser payload into validated domain values.
     fn into_parts(self) -> Result<(CompositeConditions, usize, usize)> {
         if self.target == 0 {
-            return Err(AppError::BadRequest("目标数量必须大于 0".to_string()));
+            return Err(AppError::BadRequest(
+                "Target count must be greater than 0".to_string(),
+            ));
         }
         let suffix = self.suffix.trim();
         if suffix.is_empty() {
-            return Err(AppError::BadRequest("地址尾号不能为空".to_string()));
+            return Err(AppError::BadRequest(
+                "Address suffix must not be empty".to_string(),
+            ));
         }
         let threads = if self.threads == 0 {
             std::thread::available_parallelism()

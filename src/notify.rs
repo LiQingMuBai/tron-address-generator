@@ -76,7 +76,7 @@ impl SearchObserver for TelegramNotifier {
         self.inner.on_found(record);
 
         let text = format!(
-            "[TRON 靓号] 发现新地址 #{}\n地址: {}\n私钥: {}\n尝试次数: {}",
+            "[TRON Vanity] New address #{}\nAddress: {}\nPrivate key: {}\nAttempts: {}",
             record.index, record.address, record.private_key, record.found_at_attempts
         );
 

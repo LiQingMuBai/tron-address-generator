@@ -119,7 +119,7 @@ pub enum Condition {
     FixedChar { ch: char, index_from_end: usize },
     /// Requires the address to match an arbitrary regular expression.
     Regex { pattern: String },
-    /// Requires the address to end with the given literal string (尾号).
+    /// Requires the address to end with the given literal string.
     Suffix { value: String },
 }
 
