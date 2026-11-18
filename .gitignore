@@ -1,10 +1,10 @@
-# Rust 构建产物
+# Rust build output
 /target/
 
-# 打包输出
+# Packaging output
 /dist/
 
-# 生成的地址导出文件（含私钥，切勿提交）
+# Generated address exports (contain private keys, never commit them)
 tron_vanity_*.csv
 tron_vanity_*.txt
 tron_vanity_*.json

@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-  Windows 安装包定义（WiX v4+ schema）。
+  Windows installer definition (WiX v4+ schema).
 
-  构建方式（在 dist/ 下已放好 tron-vanity-desktop.exe、config.xml、icon.ico 之后）：
-    wix build wix/installer.wxs -arch x64 -d "DistDir=<dist 的绝对路径>" -o dist/tron-vanity-windows-x64.msi
+  Build (after tron-vanity-desktop.exe, config.xml and icon.ico are placed in dist/):
+    wix build wix/installer.wxs -arch x64 -d "DistDir=<absolute path to dist>" -o dist/tron-vanity-windows-x64.msi
 -->
 <Wix xmlns="http://wixtoolset.org/schemas/v4/wxs">
 
@@ -15,7 +15,7 @@
       Scope="perMachine"
       Compressed="yes">
 
-    <MajorUpgrade DowngradeErrorMessage="已安装更新版本的 TRON Vanity Generator。" />
+    <MajorUpgrade DowngradeErrorMessage="A newer version of TRON Vanity Generator is already installed." />
     <MediaTemplate EmbedCab="yes" />
 
     <Icon Id="AppIcon" SourceFile="$(DistDir)\icon.ico" />
@@ -37,9 +37,9 @@
       <Component Id="DesktopExecutable" Guid="3a7bd2f4-6c1e-4a5b-8d92-1f4c7b0e6a21">
         <File Id="DesktopExe" Source="$(DistDir)\tron-vanity-desktop.exe" KeyPath="yes">
           <Shortcut Id="StartMenuShortcut" Directory="AppMenuFolder"
-                    Name="TRON Vanity 靓号生成器" WorkingDirectory="INSTALLFOLDER" Icon="AppIcon" />
+                    Name="TRON Vanity Generator" WorkingDirectory="INSTALLFOLDER" Icon="AppIcon" />
           <Shortcut Id="DesktopShortcut" Directory="DesktopFolder"
-                    Name="TRON Vanity 靓号生成器" WorkingDirectory="INSTALLFOLDER" Icon="AppIcon" />
+                    Name="TRON Vanity Generator" WorkingDirectory="INSTALLFOLDER" Icon="AppIcon" />
         </File>
       </Component>
       <Component Id="DefaultConfig" Guid="b6e0c913-7d24-4f38-9a15-2c8e5f7d1b64">
