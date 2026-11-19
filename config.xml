@@ -17,37 +17,47 @@
         <ExportFormat>CSV</ExportFormat> <!-- Export format: CSV, TXT, JSON -->
     </TaskConfig>
 
-    <!-- Composite suffix conditions (multiple conditions can be combined) -->
+    <!--
+      Composite matching conditions (multiple conditions can be combined).
+      Leave this section empty to generate random addresses instead of matching
+      a suffix. Commented-out examples of each condition type are shown below.
+    -->
     <CompositeConditions>
         <!-- Logic operator: AND (match all) or OR (match any) -->
         <LogicOperator>AND</LogicOperator>
 
-        <!-- Condition 1: repeating characters (e.g. suffix contains 888) -->
+        <!--
+        Condition: repeating characters (e.g. the address ends with 888)
         <Condition>
             <Type>Repeating</Type>
             <Param>
                 <Char>8</Char>
                 <MinCount>3</MinCount>
-                <Position>Last</Position> <!-- Position: Last (at the end), Anywhere (any position) -->
+                <Position>Last</Position>
             </Param>
         </Condition>
+        -->
 
-        <!-- Condition 2: fixed character match (e.g. 5th character from the end is A) -->
+        <!--
+        Condition: fixed character match (e.g. 5th character from the end is A)
         <Condition>
             <Type>FixedChar</Type>
             <Param>
                 <Char>A</Char>
-                <IndexFromEnd>5</IndexFromEnd> <!-- 1-based index counted from the end -->
+                <IndexFromEnd>5</IndexFromEnd>
             </Param>
         </Condition>
+        -->
 
-        <!-- Condition 3: regular expression match (advanced custom) -->
+        <!--
+        Condition: regular expression match (advanced custom)
         <Condition>
             <Type>Regex</Type>
             <Param>
-                <Pattern>[a-zA-Z0-9]{4}$</Pattern> <!-- Example: last 4 characters must be letters or digits -->
+                <Pattern>[a-zA-Z0-9]{4}$</Pattern>
             </Param>
         </Condition>
+        -->
     </CompositeConditions>
 
 </AddressGeneratorConfig>

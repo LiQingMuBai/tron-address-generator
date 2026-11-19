@@ -303,11 +303,6 @@ impl StartRequest {
             ));
         }
         let suffix = self.suffix.trim();
-        if suffix.is_empty() {
-            return Err(AppError::BadRequest(
-                "Address suffix must not be empty".to_string(),
-            ));
-        }
         let threads = if self.threads == 0 {
             std::thread::available_parallelism()
                 .map(|n| n.get())
@@ -316,11 +311,20 @@ impl StartRequest {
             self.threads
         };
 
-        let conditions = CompositeConditions {
-            logic: LogicOperator::And,
-            conditions: vec![Condition::Suffix {
-                value: suffix.to_string(),
-            }],
+        // An empty suffix means "no filter": every freshly generated address
+        // qualifies, so the run simply yields random addresses.
+        let conditions = if suffix.is_empty() {
+            CompositeConditions {
+                logic: LogicOperator::And,
+                conditions: Vec::new(),
+            }
+        } else {
+            CompositeConditions {
+                logic: LogicOperator::And,
+                conditions: vec![Condition::Suffix {
+                    value: suffix.to_string(),
+                }],
+            }
         };
 
         Ok((conditions, self.target, threads))
@@ -344,6 +348,9 @@ fn config_defaults(config: &Config) -> Value {
 }
 
 /// Best-effort translation of the XML conditions into a single trailing suffix.
+///
+/// Returns an empty string when the configuration declares no matching
+/// condition, which the UI shows as "no suffix" (i.e. random addresses).
 fn derive_suffix(config: &Config) -> String {
     for condition in &config.conditions.conditions {
         match condition {
@@ -356,7 +363,7 @@ fn derive_suffix(config: &Config) -> String {
             _ => {}
         }
     }
-    "888".to_string()
+    String::new()
 }
 
 /// Render a validation failure as HTTP 400.

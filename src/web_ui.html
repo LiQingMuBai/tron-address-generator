@@ -378,9 +378,9 @@
         <h2>Suffix match</h2>
         <label class="field">
           <span>Address suffix (e.g. 888, A888, 66888)</span>
-          <input id="suffix" type="text" value="888" maxlength="32" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="888">
+          <input id="suffix" type="text" value="" maxlength="32" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="random">
         </label>
-        <p class="hint">Generates addresses ending with this string · case-sensitive · Base58 characters only (no 0 O I l)</p>
+        <p class="hint">Generates addresses ending with this string · case-sensitive · Base58 characters only (no 0 O I l) · leave empty to generate random addresses</p>
       </section>
 
       <section class="card">
@@ -422,7 +422,7 @@
             <tbody id="results"></tbody>
           </table>
         </div>
-        <div class="empty" id="empty">No results yet — enter a suffix and click "Start"</div>
+        <div class="empty" id="empty">No results yet — enter a suffix (or leave it empty for random addresses) and click "Start"</div>
       </section>
     </div>
   </div>
@@ -435,7 +435,7 @@
   const CORES = navigator.hardwareConcurrency || 1;
 
   const FALLBACK = {
-    suffix: "888",
+    suffix: "",
     target: 1,
     threads: CORES
   };
@@ -454,10 +454,10 @@
   }
 
   function applyDefaults(data, source) {
-    $("suffix").value = data.suffix == null ? "888" : String(data.suffix);
+    $("suffix").value = data.suffix == null ? "" : String(data.suffix);
     $("target").value = data.target == null ? 1 : data.target;
     $("threads").value = data.threads == null ? CORES : data.threads;
-    if (source === "config") toast("Loaded suffix preset from config.xml", "ok");
+    if (source === "config") toast("Loaded defaults from config.xml", "ok");
   }
 
   function setStatus(kind, text) {
@@ -569,10 +569,6 @@
 
   async function start() {
     const suffix = $("suffix").value.trim();
-    if (!suffix) {
-      toast("Enter an address suffix", "error");
-      return;
-    }
 
     const payload = {
       suffix: suffix,
